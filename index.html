@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PR Photo Editor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        canvas {
+            margin: 20px;
+            border: 1px solid #ccc;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .controls div {
+            margin: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PR Photo Editor</h1>
+    <input type="file" id="upload" accept="image/*">
+    <canvas id="canvas"></canvas>
+    <div class="controls">
+        <div>
+            <label for="hue">Hue:</label>
+            <input type="range" id="hue" min="0" max="360" value="0">
+        </div>
+        <div>
+            <label for="saturation">Saturation:</label>
+            <input type="range" id="saturation" min="0" max="100" value="100">
+        </div>
+        <div>
+            <label for="lightness">Lightness:</label>
+            <input type="range" id="lightness" min="0" max="100" value="50">
+        </div>
+        <div>
+            <button id="sharpen">Sharpen</button>
+            <button id="enhance">Enhance</button>
+        </div>
+        <button id="download">Download</button>
+    </div>
+    <script>
+        const upload = document.getElementById('upload');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let img = new Image();
+
+        upload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById('hue').addEventListener('input', applyFilters);
+        document.getElementById('saturation').addEventListener('input', applyFilters);
+        document.getElementById('lightness').addEventListener('input', applyFilters);
+        document.getElementById('sharpen').addEventListener('click', sharpen);
+        document.getElementById('enhance').addEventListener('click', enhance);
+        document.getElementById('download').addEventListener('click', downloadImage);
+
+        function applyFilters() {
+            const hue = document.getElementById('hue').value;
+            const saturation = document.getElementById('saturation').value;
+            const lightness = document.getElementById('lightness').value;
+            ctx.filter = `hue-rotate(${hue}deg) saturate(${saturation}%) brightness(${lightness}%)`;
+            ctx.drawImage(img, 0, 0);
+        }
+
+        function sharpen() {
+            // Example sharpen effect (using a simple convolution kernel)
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = data[i] * 1.2;     // red
+                data[i+1] = data[i+1] * 1.2; // green
+                data[i+2] = data[i+2] * 1.2; // blue
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function enhance() {
+            // Example enhance effect (simple contrast adjustment)
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const factor = 1.2;
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = factor * (data[i] - 128) + 128;     // red
+                data[i+1] = factor * (data[i+1] - 128) + 128; // green
+                data[i+2] = factor * (data[i+2] - 128) + 128; // blue
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'edited-photo.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>
